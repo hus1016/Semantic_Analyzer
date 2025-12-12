@@ -1,14 +1,10 @@
-
-<DOCUMENT filename="semant_adjusted.cc">
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include "semant.h"
 #include "utilities.h"
-
 extern int semant_debug;
 extern char *curr_filename;
-
 //////////////////////////////////////////////////////////////////////
 //
 // Symbols
@@ -79,33 +75,25 @@ substr      = idtable.add_string("substr");
 type_name   = idtable.add_string("type_name");
 val         = idtable.add_string("_val");
 }
-
 ClassTable::ClassTable(Classes classes) : semant_errors(0) , error_stream(cerr) {
-
 /* Add basic classes first to construct the inheritance graph */
 install_basic_classes();
-
 /* Then add the remaining classes */
 for (int i = classes->first(); classes->more(i); i = classes->next(i)) {
 add_to_class_table(classes->nth(i));
 }
 }
-
 void ClassTable::install_basic_classes() {
-
 // The tree package uses these globals to annotate the classes built below.
 // curr_lineno  = 0;
 Symbol filename = stringtable.add_string("<basic class>");
-
 // The following demonstrates how to create dummy parse trees to
 // refer to basic Cool classes.  There's no need for method
 // bodies -- these are already built into the runtime system.
-
 // IMPORTANT: The results of the following expressions are
 // stored in local variables.  You will want to do something
 // with those variables at the end of this method to make this
 // code meaningful.
-
 //
 // The Object class has no parent class. Its methods are
 //        abort() : Object    aborts the program
@@ -114,7 +102,6 @@ Symbol filename = stringtable.add_string("<basic class>");
 //
 // There is no need for method bodies in the basic classes---these
 // are already built in to the runtime system.
-
 Class_ Object_class =
 class_(Object,
 No_class,
@@ -124,7 +111,6 @@ single_Features(method(cool_abort, nil_Formals(), Object, no_expr())),
 single_Features(method(type_name, nil_Formals(), Str, no_expr()))),
 single_Features(method(copy, nil_Formals(), SELF_TYPE, no_expr()))),
 filename);
-
 //
 // The IO class inherits from Object. Its methods are
 //        out_string(Str) : SELF_TYPE       writes a string to the output
@@ -145,7 +131,6 @@ SELF_TYPE, no_expr()))),
 single_Features(method(in_string, nil_Formals(), Str, no_expr()))),
 single_Features(method(in_int, nil_Formals(), Int, no_expr()))),
 filename);
-
 //
 // The Int class has no methods and only a single attribute, the
 // "val" for the integer.
@@ -155,13 +140,11 @@ class_(Int,
 Object,
 single_Features(attr(val, prim_slot, no_expr())),
 filename);
-
 //
 // Bool also has only the "val" slot.
 //
 Class_ Bool_class =
 class_(Bool, Object, single_Features(attr(val, prim_slot, no_expr())),filename);
-
 //
 // The class Str has a number of slots and operations:
 //       val                                  the length of the string
@@ -190,14 +173,12 @@ single_Formals(formal(arg2, Int))),
 Str,
 no_expr()))),
 filename);
-
 add_to_class_table(Object_class);
 add_to_class_table(IO_class);
 add_to_class_table(Int_class);
 add_to_class_table(Bool_class);
 add_to_class_table(Str_class);
 }
-
 ////////////////////////////////////////////////////////////////////
 //
 // semant_error is an overloaded function for reporting errors
@@ -212,34 +193,36 @@ add_to_class_table(Str_class);
 //       print a line number and filename
 //
 ///////////////////////////////////////////////////////////////////
-
 ostream& ClassTable::semant_error(Class_ c)
 {
 return semant_error(c->get_filename(),c);
 }
-
 ostream& ClassTable::semant_error(Symbol filename, tree_node *t)
 {
 error_stream << filename << ":" << t->get_line_number() << ": ";
 return semant_error();
 }
-
 ostream& ClassTable::semant_error()
 {
 semant_errors++;
 return error_stream;
 }
-
 /*
 
 Other ClassTable methods
 */
+
 /*
 
 Adds the class to the class table (specifically, adds it to the class map
 and the inheritance graph) with the following caveats:
+
 Cannot add a class that has already been defined.
+
+
 Classes cannot inherit from Bool, SELF_TYPE, or String.
+
+
 Cannot define a SELF_TYPE class.
 */
 void ClassTable::add_to_class_table(Class_ c) {
@@ -262,11 +245,18 @@ class_map[name] = c;
 inheritance_graph[name] = parent;
 }
 }
+
+
 /*
 
 Validates the inheritance graph by checking that:
+
 Every parent class is defined.
+
+
 There are no cycles.
+
+
 The class Main is defined.
 */
 bool ClassTable::is_valid() {
@@ -302,6 +292,8 @@ return false;
 }
 return true;
 }
+
+
 /*
 
 Returns the least upper bound (least common ancestor)
@@ -325,6 +317,7 @@ c1 = inheritance_graph[c1];
 } while (c1 != Object);
 return lub_result;
 }
+
 /*
 
 Returns true if child is a subclass of parent, false otherwise.
@@ -339,14 +332,13 @@ current = inheritance_graph[current];
 } while (current != Object);
 return false;
 }
+
 bool ClassTable::class_exists(Symbol c) {
 return inheritance_graph.find(c) != inheritance_graph.end();
 }
-
 Class_ ClassTable::get_class(Symbol class_name) {
 return class_map[class_name];
 }
-
 /*
 
 Traverses the inheritance chain of the input class until
@@ -364,6 +356,7 @@ current_name = inheritance_graph[current_name];
 } while (current_name != No_class);
 return NULL;
 }
+
 /*
 
 Traverses the inheritance chain of the input class until
@@ -381,6 +374,7 @@ current_name = inheritance_graph[current_name];
 } while (current_name != No_class);
 return NULL;
 }
+
 /*
 
 Traverses the inheritance chain of the input class, starting with
@@ -399,14 +393,21 @@ current_name = inheritance_graph[current_name];
 } while (current_name != No_class);
 return NULL;
 }
+
 /*
 
 Checks the method signature of the input method for the two classes.
 Returns true if the signatures are the same; specifically, if the
 following hold:
+
 Formal parameters have the same types in the same order
+
+
 Number of formal parameters are the same
+
+
 Return types match
+
 Does NOT ensure that the formal parameters have the same identifiers.
 */
 bool ClassTable::check_method_signature(Symbol c1, Symbol c2, Symbol method_name) {
@@ -427,13 +428,14 @@ idx2 = formals2->next(idx2);
 }
 return !(formals1->more(idx1) || formals2->more(idx2));
 }
-/*   This is the entry point to the semantic checker.
 
+/*   This is the entry point to the semantic checker.
 Your checker should do the following two things:
 
 Check that the program is semantically correct
 Decorate the abstract syntax tree with type information
 by setting the type' field in each Expression node. (see tree.h')
+
 You are free to first do 1), make sure you catch all semantic
 errors. Part 2) can be done in a second stage, when you want
 to build mycoolc.
@@ -441,7 +443,6 @@ to build mycoolc.
 void program_class::semant()
 {
 initialize_constants();
-
 /* Initialize a new ClassTable inheritance graph and make sure it
 is well-formed. */
 ClassTable *classtable = new ClassTable(classes);
@@ -450,7 +451,6 @@ type_env_t env;
 env.om = new SymbolTable<Symbol, Symbol>();
 env.curr = NULL;
 env.ct = classtable;
-
 /* Recursively type check each class. */
 int idx = classes->first();
 while (classes->more(idx)) {
@@ -463,25 +463,22 @@ env.om->exitscope();
 idx = classes->next(idx);
 }
 }
-
 if (classtable->errors()) {
 cerr << "Compilation halted due to static semantic errors." << endl;
 exit(1);
 }
 }
-
 /*
 
 Other semantic analysis helper methods defined in cool-tree.h.
 */
+
 Symbol class__class::get_name() {
 return name;
 }
-
 Symbol class__class::get_parent() {
 return parent;
 }
-
 /*
 
 Initializes environment tables with class attributes.
@@ -497,6 +494,7 @@ features->nth(feat_idx)->add_to_environment(env);
 feat_idx = features->next(feat_idx);
 }
 }
+
 /*
 
 Gets the list of formals for a particular method of the class.
@@ -512,6 +510,7 @@ feat_idx = features->next(feat_idx);
 }
 return NULL;
 }
+
 /*
 
 Gets the return type of a particular method of the class.
@@ -527,22 +526,21 @@ feat_idx = features->next(feat_idx);
 }
 return NULL;
 }
+
 /*
 
 Simple accessors for classes defined in cool-tree.h.
 */
 bool method_class::is_method() { return true; }
 bool attr_class::is_method() { return false; }
+
 Formals method_class::get_formals() { return formals; }
 Symbol method_class::get_return_type() { return return_type; }
-
 // These two methods should never be called.
 Formals attr_class::get_formals() { return NULL; }
 Symbol attr_class::get_return_type() { return NULL; }
-
 Symbol method_class::get_name() { return name; };
 Symbol attr_class::get_name() { return name; };
-
 void method_class::add_to_environment(type_env_t env) { /* Nothing to do */ }
 void attr_class::add_to_environment(type_env_t env) {
 if (env.om->probe(name) != NULL) {
@@ -553,10 +551,8 @@ err_stream << "Unable to add attribute " << name
 env.om->addid(name, &type_decl);
 }
 }
-
 Symbol formal_class::get_type() { return type_decl; }
 Symbol branch_class::get_type() { return type_decl; }
-
 /*
 
 Top-most step in recursive type checking. Recursively checks each of the
@@ -570,15 +566,29 @@ feat_idx = features->next(feat_idx);
 }
 return this;
 }
+
 /*
 
 Recursively checks formal parameters for the method as follows:
+
 In a new environment scope, bind the keyword self.
+
+
 Recursively check the formal parameters in this environment.
+
+
 For the resulting parameter types:
+
+
 If the method is inherited, make sure the ancestor method is properly overwritten.
+
+
 Declared return value of SELF_TYPE should return SELF_TYPE.
+
+
 Make sure the return type is a defined class (exists in the class table).
+
+
 Make sure the return type is a subtype of the declared return type.
 */
 Feature method_class::type_check(type_env_t env) {
@@ -591,6 +601,8 @@ formals->nth(formal_idx)->type_check(env);
 formal_idx = formals->next(formal_idx);
 }
 Symbol inferred_ret = expr->type_check(env)->type;
+
+
 Symbol ancestor_class = env.ct->get_ancestor_method_class(current_class, name);
 if (ancestor_class != NULL && !env.ct->check_method_signature(ancestor_class, current_class, name)) {
 ostream &err_stream = env.ct->semant_error(env.curr->get_filename(), this);
@@ -598,7 +610,6 @@ err_stream << "Overriding method signature of " << name << " for class "
 << current_class << " doesn't match method signature for ancestor "
 << ancestor_class << ".\n";
 }
-
 if (!env.ct->class_exists(return_type)) {
 ostream& err_stream = env.ct->semant_error(env.curr->get_filename(), this);
 err_stream << "Undefined return type " << return_type << " in method " << name << ".\n";
@@ -619,12 +630,16 @@ err_stream << "Method initialization " << inferred_ret
 env.om->exitscope();
 return this;
 }
-
 /*
 
 Type checks a class attribute as follows:
+
 In a new environment scope, bind the keyword self.
+
+
 Evaluate the initialization of the attribute.
+
+
 Make sure the initialized type is a subclass of the declared type.
 */
 Feature attr_class::type_check(type_env_t env) {
@@ -645,6 +660,8 @@ err_stream << "Attribute initialization " << init_type
 }
 return this;
 }
+
+
 /*
 
 Type checks a formal parameter by making sure it hasn't already been defined in the
@@ -662,6 +679,7 @@ env.om->addid(name, &type_decl);
 }
 return this;
 }
+
 /* Adds the branch to the environment. See typcase_class for more details. */
 Symbol branch_class::type_check(type_env_t env) {
 // The following condition should never be true because a branch identifier
@@ -675,7 +693,6 @@ return Object;
 }
 return expr->type_check(env)->type;
 }
-
 /*
 
 Adds the identifier to the environment after checking its evaulated type
@@ -697,6 +714,7 @@ type = expr_type;
 }
 return this;
 }
+
 /*
 
 Same as normal dispatch (see dispatch_class::type_check(type_env_t env) below),
@@ -752,15 +770,27 @@ err_stream << "Number of declared formals doesn't match number checked.\n";
 type = (declared_ret == SELF_TYPE) ? receiver_type : declared_ret;
 return this;
 }
+
 /*
 
 Given the following expression: e.f(e1, ..., en), performs the following check:
+
 Recursively checks e.
+
+
 Recursively checks e1, ..., en.
+
+
 Makes sure that the evaluated types of e1, ..., en are subtypes of the types
+
 declared in the method signature.
+
 Returns:
+
+
 The evaluated type if the declared type is SELF_TYPE.
+
+
 The declared type otherwise.
 */
 Expression dispatch_class::type_check(type_env_t env) {
@@ -806,6 +836,8 @@ err_stream << "Number of declared formals doesn't match number checked.\n";
 type = (declared_ret == SELF_TYPE) ? receiver_type : declared_ret;
 return this;
 }
+
+
 /*
 
 Recursively type checks the predicate, then the then expression, then the
@@ -827,6 +859,7 @@ type = env.ct->lub(then_type, else_type);
 }
 return this;
 }
+
 /* Recurisvely type checks the predicate and body, makes sure predicate is a Bool. */
 Expression loop_class::type_check(type_env_t env) {
 Symbol pred_type = pred->type_check(env)->type;
@@ -840,23 +873,16 @@ type = Object;
 }
 return this;
 }
-
 /*
 
 Type checks a linked list of branch/case expressions in the followin format:
-
 case e0 of x1:T1=>e1, ..., xn:Tn=>en esac
-
 For each branch i, the current identifier xi is saved in a new scope and the
-
 expression ei is evaluated. The typcase class evaluates the the least upper
-
 bound of the evaluated types.
 */
 Expression typcase_class::type_check(type_env_t env) {
-expr->type_check(env)->type;
-
-// O(N^2) check to make sure there are no duplicate types.
+expr->type_check(env)->type;// O(N^2) check to make sure there are no duplicate types.
 int case_idx_outer = cases->first();
 while (cases->more(case_idx_outer)) {
 int case_idx_inner = cases->first();
@@ -871,9 +897,7 @@ return this;
 case_idx_inner = cases->next(case_idx_inner);
 }
 case_idx_outer = cases->next(case_idx_outer);
-}
-
-int case_idx = cases->first();
+}int case_idx = cases->first();
 Symbol case_type = cases->nth(case_idx)->type_check(env);
 case_idx = cases->next(case_idx);
 while (cases->more(case_idx)) {
@@ -898,15 +922,21 @@ body_idx = body->next(body_idx);
 type = last_type;
 return this;
 }
-
 /*
 
 Given the expression: let x:T0[<-e1] in e2:T2,
+
 Evaluates the initializing expression e0 if provided.
+
+
 If e0 is provided, makes sure the evaluated type T1 is a child of the
+
 declared type T0.
+
 Enters a new environment scope with the identifier x bound to the declared
+
 type T0.
+
 Typechecks the body e2, and the type evaluates to the evaluated type T2.
 */
 Expression let_class::type_check(type_env_t env) {
@@ -933,6 +963,8 @@ env.om->exitscope();
 }
 return this;
 }
+
+
 /*
 
 The following arithmetic classes are self-explanatory:
@@ -950,6 +982,7 @@ type = Int;
 }
 return this;
 }
+
 Expression sub_class::type_check(type_env_t env) {
 Symbol left_type = e1->type_check(env)->type;
 Symbol right_type = e2->type_check(env)->type;
@@ -962,7 +995,6 @@ type = Int;
 }
 return this;
 }
-
 Expression mul_class::type_check(type_env_t env) {
 Symbol left_type = e1->type_check(env)->type;
 Symbol right_type = e2->type_check(env)->type;
@@ -975,7 +1007,6 @@ type = Int;
 }
 return this;
 }
-
 Expression divide_class::type_check(type_env_t env) {
 Symbol left_type = e1->type_check(env)->type;
 Symbol right_type = e2->type_check(env)->type;
@@ -988,7 +1019,6 @@ type = Int;
 }
 return this;
 }
-
 Expression neg_class::type_check(type_env_t env) {
 Symbol operand_type = e1->type_check(env)->type;
 if (operand_type != Int) {
@@ -1000,7 +1030,6 @@ type = Int;
 }
 return this;
 }
-
 Expression lt_class::type_check(type_env_t env) {
 Symbol left_type = e1->type_check(env)->type;
 Symbol right_type = e2->type_check(env)->type;
@@ -1013,7 +1042,6 @@ type = Bool;
 }
 return this;
 }
-
 Expression eq_class::type_check(type_env_t env) {
 Symbol left_type = e1->type_check(env)->type;
 Symbol right_type = e2->type_check(env)->type;
@@ -1030,7 +1058,6 @@ type = Bool;
 }
 return this;
 }
-
 Expression leq_class::type_check(type_env_t env) {
 Symbol left_type = e1->type_check(env)->type;
 Symbol right_type = e2->type_check(env)->type;
@@ -1043,7 +1070,6 @@ type = Bool;
 }
 return this;
 }
-
 Expression comp_class::type_check(type_env_t env) {
 Symbol operand_type = e1->type_check(env)->type;
 if (operand_type != Bool) {
@@ -1055,23 +1081,19 @@ type = Bool;
 }
 return this;
 }
-
 /* Primitive constants */
 Expression int_const_class::type_check(type_env_t env) {
 type = Int;
 return this;
 }
-
 Expression bool_const_class::type_check(type_env_t env) {
 type = Bool;
 return this;
 }
-
 Expression string_const_class::type_check(type_env_t env) {
 type = Str;
 return this;
 }
-
 Expression new__class::type_check(type_env_t env) {
 if (type_name != SELF_TYPE && !env.ct->class_exists(type_name)) {
 ostream& err_stream = env.ct->semant_error(env.curr->get_filename(), this);
@@ -1082,18 +1104,15 @@ type = type_name;
 }
 return this;
 }
-
 Expression isvoid_class::type_check(type_env_t env) {
 e1->type_check(env);
 type = Bool;
 return this;
 }
-
 Expression no_expr_class::type_check(type_env_t env) {
 type = No_type;
 return this;
 }
-
 Expression object_class::type_check(type_env_t env) {
 if (name == self) {
 type = SELF_TYPE;
